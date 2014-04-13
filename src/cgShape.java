@@ -16,7 +16,11 @@ import javax.media.opengl.*;
 import javax.media.opengl.awt.GLCanvas;
 import java.io.*;
 
-
+/**
+ * A class that can draw a cube, cylinder, sphere, or cone
+ *
+ * Largely implemented by: Stephen Yingling
+ */
 public class cgShape extends simpleShape
 {
     /**
@@ -34,12 +38,14 @@ public class cgShape extends simpleShape
      *        direction along each face
      *
      * Can only use calls to addTriangle()
+     * Implemented by Stephen Yingling
      */
     public void makeCube (int subdivisions)
     {
         if( subdivisions < 1 )
             subdivisions = 1;
 
+        //Make all the points at the corners of the cube
         MyPoint frontLowerLeft = new MyPoint(-.5f,-.5f,-.5f),
                 frontLowerRight = new MyPoint(.5f,-.5f,-.5f),
                 frontUpperRight = new MyPoint(.5f,.5f,-.5f),
@@ -49,6 +55,8 @@ public class cgShape extends simpleShape
                 backLowerRight = new MyPoint(.5f,-.5f,.5f),
                 backUpperRight = new MyPoint(.5f,.5f,.5f)
                 ;
+
+        //Draw each face
         makeQuad(frontLowerLeft,frontLowerRight,frontUpperRight,
                 frontUpperLeft, subdivisions);
 
@@ -69,9 +77,19 @@ public class cgShape extends simpleShape
 
     }
 
+    /**
+     * Makes a quad from the given points with the given subdivisions
+     * @param ll - The lower left corner of the quad
+     * @param lr - The lower right corner of the quad
+     * @param ur - The upper right corner of the quad
+     * @param ul - The upper left corner of the quad
+     * @param subs - The number of subdivisions for the quad
+     * Implemented by: Stephen Yingling
+     */
     public void makeQuad(MyPoint ll, MyPoint lr, MyPoint ur, MyPoint ul, int subs ){
         float subsize = 1.0f/subs;
 
+        //Subdivide the quad into columns and draw the columns
         for(int i=0; i<subs; i++){
             float curPos = subsize * i;
             MyPoint q = ul.mult(1f-curPos).add(ur.mult(curPos));
@@ -85,9 +103,19 @@ public class cgShape extends simpleShape
         }
     }
 
-
+    /**
+     * Draws a column of quads
+     * @param q - The left upper point of the column
+     * @param r - The left lower point of the column
+     * @param qp - The right upper point of the column
+     * @param rp - The right lower point of the column
+     * @param numSubs - The number of rows for this column
+     * Implemented by: Stephen Yingling
+     */
     public void makeQuadCol(MyPoint q, MyPoint r, MyPoint qp, MyPoint rp, int numSubs){
         float sublength = 1f/numSubs;
+
+        //Calculate and draw two triangles for each row
         for(int i=0; i < numSubs; i++){
             float f = i * sublength;
             MyPoint p1 = q.mult(1-f).add(r.mult(f)),
@@ -100,6 +128,13 @@ public class cgShape extends simpleShape
         }
     }
 
+    /**
+     * A callthrough to the other addTriangle function
+     * @param p1 - The first point of the triangle
+     * @param p2 - The second point of the triangle
+     * @param p3 - The third point of the triangle
+     * Implemented by: Stephen Yingling
+     */
     public void addTriangle(MyPoint p1, MyPoint p2, MyPoint p3){
         addTriangle(p1.getX(), p1.getY(), p1.getZ(),
                 p2.getX(), p2.getY(), p2.getZ(),
@@ -118,6 +153,7 @@ public class cgShape extends simpleShape
      * @param heightDivisions - number of subdivisions along the height
      *
      * Can only use calls to addTriangle()
+     * Implemented by Stephen Yingling
      */
     public void makeCylinder (float radius, int radialDivisions, int heightDivisions)
     {
@@ -134,6 +170,8 @@ public class cgShape extends simpleShape
         float rads = (float)Math.toRadians(360f/radialDivisions);
 
         for(int i=0; i < radialDivisions; i++){
+
+            //Make triangles for the disks
             float curDegs = i * rads;
             p2f = new MyPoint(radius* (float)Math.cos(curDegs),
                              radius * (float) Math.sin(curDegs),
@@ -153,6 +191,7 @@ public class cgShape extends simpleShape
 
             addTriangle(origin,p2b,p1b);
 
+            //Make the rectangle on the side
             makeQuadCol(p1f,p1b,p2f,p2b,heightDivisions);
         }
     }
@@ -168,6 +207,7 @@ public class cgShape extends simpleShape
      * @param heightDivisions - number of subdivisions along the height
      *
      * Can only use calls to addTriangle()
+     * Implemented by Stephen Yingling
      */
     public void makeCone (float radius, int radialDivisions, int heightDivisions)
     {
@@ -183,6 +223,7 @@ public class cgShape extends simpleShape
 
         float rads = (float)Math.toRadians(360f/radialDivisions);
 
+        //Make the disk
         for(int i=0; i < radialDivisions; i++){
             float curDegs = i * rads;
             p2f = new MyPoint(radius* (float)Math.cos(curDegs),
@@ -197,29 +238,36 @@ public class cgShape extends simpleShape
 
             origin.setZ(.5f);
 
+            //Make a "quad" with the far points of the quad the same
+            //Thus making a conical shape
             makeQuadCol(p1f,origin,p2f,origin,heightDivisions);
         }
     }
 
     /**
-     * makeSphere - Create sphere of a given radius, centered at the origin, 
-     * using spherical coordinates with separate number of thetha and 
-     * phi subdivisions.
+     * makeSphere - Makes a sphere using the recursive subdivision method
      *
      * @param radius - Radius of the sphere
-     * @param slices - number of subdivisions in the theta direction
-     * @param stacks - Number of subdivisions in the phi direction.
+     * @param slices - number of recursions
+     * @param stacks - Not used
      *
      * Can only use calls to addTriangle
+     *
+     * Implemented by Stephen Yingling
      */
     public void makeSphere (float radius, int slices, int stacks)
     {
         if( slices < 3 )
             slices = 3;
 
+        if (slices > 5){
+            slices = 5;
+        }
+
         if( stacks < 3 )
             stacks = 3;
 
+        //Make the isocohedron net
         float a = (float)(2/(1+Math.sqrt(5))),
               na = -1*a,
               p = 1, np = -1*p;
@@ -237,6 +285,7 @@ public class cgShape extends simpleShape
                 v10 = new MyPoint(na,np,0),
                 v11 = new MyPoint(a,np,0);
 
+        //Make recursive triangles
         recurTriEngels(slices,v0,v1,v2,radius);
         recurTriEngels(slices,v3,v2,v1,radius);
         recurTriEngels(slices,v3,v4,v5,radius);
@@ -265,7 +314,22 @@ public class cgShape extends simpleShape
 
     }
 
+    /**
+     * Recursively add triangles to the given triangle.
+     *
+     * @param subs - The number of subdivions
+     * @param p0 - The 1st point of the triangle
+     * @param p1 - The 2nd point of the triangle
+     * @param p2 - - The 3rd point of the triangle
+     * @param rad - The radius of the sphere
+     *
+     * Implemented by Stephen Yingling
+     *
+     * If there were three Engels, then Marx would have made triple the money!
+     */
     public void recurTriEngels(int subs, MyPoint p0, MyPoint p1 , MyPoint p2, float rad){
+
+        //Draw at the base case
         if(subs == 1){
             addTriangle(p0.mult(rad/p0.getMagnitude()),
                     p1.mult(rad/p1.getMagnitude()),
@@ -279,26 +343,57 @@ public class cgShape extends simpleShape
     }
 
 
+    /**
+     * A class to represent a point in 3D space
+     * Created by: Stephen Yingling
+     */
     public class MyPoint{
         protected float x;
         protected float y;
         protected float z;
 
+        /**
+         * Make a point
+         * @param x - The x value of the point
+         * @param y - The y value of the point
+         * @param z - The z value of the point
+         * Implemented by: Stephen Yingling
+         */
         public MyPoint(float x, float y, float z){
             this.x = x;
             this.y = y;
             this.z = z;
         }
 
+        /**
+         * Adds the value of one point to this point and returns a new point
+         * containg the result
+         * @param other - The point to add to this one
+         * @return A point containing the point addition of this point and the other one
+         * Implemented by: Stephen Yingling
+         */
         public MyPoint add(MyPoint other){
 
             return new MyPoint(this.x + other.getX(), this.y + other.getY(), this.z + other.getZ());
         }
 
+        /**
+         * Multiply this point by a scalar value
+         * @param f - The number to multiply the point by
+         * @return A new point with the new values
+         *
+         * Implemented by: Stephen Yingling
+         */
         public MyPoint mult(float  f){
             return new MyPoint(x * f, y*f, z*f);
         }
 
+        /**
+         * Determine the midpoint between this point and another
+         * @param other The other point
+         * @return A new point representing the midpoint
+         * Implemented by: Stephen Yingling
+         */
         public MyPoint midPoint(MyPoint other){
             float nx = (other.getX()+x)/2f,
                   ny = (other.getY()+y)/2f,
@@ -307,30 +402,48 @@ public class cgShape extends simpleShape
             return new MyPoint(nx,ny,nz);
         }
 
+        /**
+         * Gets the magnitude of this point
+         * @return The magnitude of this point
+         * Implemented by: Stephen Yingling
+         */
         public float getMagnitude(){
             return (float)Math.sqrt(Math.pow(x,2) + Math.pow(y,2) + Math.pow(z,2));
         }
 
+        /**
+         *
+         * @return The x value
+         * Implemented by: Stephen Yingling
+         */
         public float getX() {
             return x;
         }
 
-        public void setX(float x) {
-            this.x = x;
-        }
-
+        /**
+         *
+         * @return The y value
+         * Implemented by: Stephen Yingling
+         */
         public float getY() {
             return y;
         }
 
-        public void setY(float y) {
-            this.y = y;
-        }
 
+        /**
+         *
+         * @return The z value
+         * Implemented by: Stephen Yingling
+         */
         public float getZ() {
             return z;
         }
 
+        /**
+         * Sets the z value to the specified value
+         * @param z - The new z value
+         * Implemented by: Stephen Yingling
+         */
         public void setZ(float z) {
             this.z = z;
         }
